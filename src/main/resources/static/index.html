@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WS throughput demo</title>
+    <style>
+        .with-loader.loading button {
+            display: none;
+        }
+
+        .with-loader img {
+            display: none;
+        }
+
+        .with-loader.loading img {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<h1>
+    WS throughput demo
+</h1>
+<span id="ws-conn-status">WS connecting</span>
+<h3>Send some data</h3>
+<pre>
+    Для демонстрации пропускной возможности веб сокета предлагается следуюущее:
+     - Заполнить поле "Количество слов"
+     - Ввести слово в одноименное поле
+    При нажатии на кнопку отправить на сервер уйдет json,
+    где в поле "chars" будет находится указанное слово повторенное указанное кол-во раз.
+    Сервер, получив данную посылку, посчитает кол-во принятых букв и отправит ответ с этим количеством
+</pre>
+<label>
+    Количество слов
+    <input type="number" value="1000000" id="number-of-words">
+</label>
+<label>
+    Слово
+    <input type="text" value="WSDemo" id="word">
+</label>
+<div class="with-loader">
+    <button type="button" id="send">Отправить</button>
+    <img src="loader.svg"/>
+</div>
+<h3>
+    Last message from server
+</h3>
+<div id="last-message">
+
+</div>
+<script>
+    const socket = new WebSocket("ws://localhost:8080/ws-endpoint");
+    const withLoader = document.querySelector('.with-loader');
+    const numberOwWordsElem = document.getElementById('number-of-words');
+    const wordElement = document.getElementById('word');
+    const lastMessageElement = document.getElementById('last-message');
+
+    function showConnectionStatus(text) {
+        document.getElementById('ws-conn-status').innerText = text
+    }
+
+
+    document.getElementById("send").addEventListener('click', () => {
+        withLoader.classList.toggle('loading');
+        setTimeout(() => {
+            const data = new Array(+numberOwWordsElem.value);
+            data.fill(wordElement.value);
+
+            socket.send(JSON.stringify(
+                {
+                    "someMarker": "test",
+                    "chars": data.join('')
+                }
+            ));
+        }, 100);
+
+
+    });
+
+    socket.onopen = () => showConnectionStatus('WS connection status: connected');
+    socket.onerror = (e) => showConnectionStatus(`WS connection status: error. ${JSON.stringify(e)}`);
+    socket.onmessage = event => {
+        withLoader.classList.toggle('loading');
+        return lastMessageElement.innerText = event.data;
+    }
+</script>
+</body>
+</html>
